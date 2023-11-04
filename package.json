@@ -4,6 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node server/index.js",
+    "start-server": "nodemon server -e html,js,scss --ignore public --ignore client",
+    "start:dev": "npm run start-server",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
