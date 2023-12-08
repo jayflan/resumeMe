@@ -3,66 +3,40 @@ const path = require('path');
 
 const app = express();
 
+//middleware (logging & parsing)
+
+// static middleware
+
+app.get("/", (req, res) => 
+  res.sendFile(path.join(__dirname, "..", "public/index.html"))
+);
 app.use(express.static(path.join(__dirname, "..", "public")));
 
-const checkWebsiteStatus = async(url) => {
-    try {
-  
-      const response = await fetch(url);
-        if(response.status === 200) {
-          console.log(url + ' is up and running!');
-        } else {
-          console.log(url + ` is responding with ${response.status} status.`);
-        };
-      
-    } catch(err) {
-  
-      console.log('ERROR---> ',err);
-  
-    };
-};
-
-//middleware build
-const websiteStatusMiddleware = (req, res, next) => {
-  console.log('Inside-->', 'websiteCheckMiddleware')
-  const websiteUrl = 'null'; //todo Refactor to simplify url input
-  let intervalId; //To store interval ID value
-  
-  const checkAndHandleError = async() => {
-    console.log('Inside-->', 'checkAndHandleError')
-    try {
-  
-      await checkWebsiteStatus(websiteUrl);
-      
-    } catch(err) {
-  
-      console.log('Website status check failed: ',err);
-      clearInterval(intervalId); // Stop interval on error
-  
-    };
-    
-  };
-
-  //execute function immediatly
-  checkAndHandleError();
-  //set interval
-  intervalId = setInterval(checkAndHandleError, 15 * 60 * 1000);
-  // next();
-
-};
-
-//use middleware
-// app.use(websiteStatusMiddleware);
-websiteStatusMiddleware();
+//api/router
 
 
+//endware (error handling)
+app.use((req, res, next) => {
+  const error = Error('Page Not Found.');
+  error.status = 404;
+  next(error);
+});
 
+app.use((err, req, res) => {
+  console.log(err.stack);
+  res.status(err.status || 500).send(err.message || 'Internal Server Error.');
+});
 
-//test run
-// checkWebsiteStatus('https://poshleaf.onrender.com');
-// checkWebsiteStatus('https://podify-uih9.onrender.com');
-// checkWebsiteStatus('null');
-
+// any remaining reqs w/ an extension (.js, .css, etc...) send 404;
+app.use((req, res, next) => {
+  if(path.extname(req.path).length) {
+    const err = new Error("Not Found");
+    err.status = 404;
+    next(err);
+  } else {
+    next();
+  }
+});
 
 
 module.exports = app;
